@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RJ CREATES | Premium Creator Hub</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-solid: #FAF9F6;
+            --text-main: #111111;
+            --text-muted: #666666;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            
+            /* Enhanced crisp black borders and deep shadows for light mode */
+            --glass-border: rgba(0, 0, 0, 0.6); 
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 8px 16px rgba(0, 0, 0, 0.4);
+            
+            --theme-base: #111111;
+            --theme-border-glow: rgba(0, 0, 0, 0.55);
+            --theme-contrast: #FFFFFF;
+            --control-btn-bg: rgba(255, 255, 255, 0.95);
+            --orb-color: 220, 215, 205; 
+        }
+
+        body.dark-mode {
+            --bg-solid: #0A0A0A;
+            --text-main: #FFFFFF;
+            --text-muted: #888888;
+            --glass-bg: rgba(18, 18, 18, 0.65);
+            
+            /* Intense bright white glow and borders for dark mode */
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --shadow: 0 16px 40px rgba(0, 0, 0, 0.95);
+            
+            --theme-base: #FFFFFF;
+            --theme-border-glow: rgba(255, 255, 255, 0.55);
+            --theme-contrast: #111111;
+            --control-btn-bg: rgba(20, 20, 20, 0.85);
+            --orb-color: 255, 255, 255; 
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            color: var(--text-main); 
+            background-color: var(--bg-solid);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease, color 0.5s ease;
+            /* Native mobile app font rendering */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1; pointer-events: none; opacity: 0.85;
+        }
+
+        .view {
+            display: none;
+            width: 100%;
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 100px 20px 40px;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .view.active { display: block; opacity: 1; transform: translateY(0); }
+
+        .top-controls {
+            position: fixed; top: 24px; right: 24px; display: flex; gap: 12px; z-index: 100;
+        }
+
+        .icon-btn {
+            background: var(--control-btn-bg);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border); color: var(--text-main);
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; cursor: pointer; box-shadow: var(--shadow);
+            touch-action: manipulation; /* Removes mobile tap delay */
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s, border-color 0.3s;
+        }
+
+        .icon-btn:hover { transform: scale(1.08); box-shadow: 0 10px 25px var(--theme-border-glow); border-color: var(--theme-base); }
+
+        .avatar-container { position: relative; width: 130px; height: 130px; margin: 0 auto 24px; }
+        
+        .avatar {
+            width: 100%; height: 100%; border-radius: 50%;
+            background: var(--glass-bg); backdrop-filter: blur(12px);
+            border: 3px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; z-index: 2; position: relative;
+            box-shadow: var(--shadow);
+            transition: border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-fallback { font-family: 'Playfair Display', serif; font-size: 3.2rem; font-weight: 800; color: var(--text-main); }
+
+        .avatar-glow {
+            position: absolute; top: -12%; left: -12%; width: 124%; height: 124%;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--theme-border-glow) 0%, transparent 65%);
+            filter: blur(16px); animation: pulseGlow 4s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1; opacity: 1; transition: background 0.5s ease;
+        }
+
+        @keyframes pulseGlow { 0% { opacity: 0.6; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1.05); } }
+
+        .header-text { text-align: center; margin-bottom: 40px; }
+        h1 { font-family: 'Playfair Display', serif; font-size: 3.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px; letter-spacing: -0.5px; }
+        p.subtitle { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; }
+
+        .links-wrapper { display: flex; flex-direction: column; gap: 14px; margin-bottom: 45px; }
+        .row-split { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; }
+
+        .btn { 
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            text-decoration: none; border-radius: 18px; font-weight: 500; font-size: 1.05rem; padding: 18px;
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border); color: var(--text-main);
+            box-shadow: var(--shadow); position: relative;
+            touch-action: manipulation;
+            opacity: 0; transform: translateY(15px);
+            animation: breatheGlow 4s infinite alternate ease-in-out;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s, border-color 0.3s, background 0.3s;
+        }
+
+        @keyframes breatheGlow {
+            0% { box-shadow: var(--shadow), 0 0 2px var(--theme-border-glow); }
+            100% { box-shadow: var(--shadow), 0 0 15px var(--theme-border-glow); border-color: var(--theme-base); }
+        }
+
+        .btn-left { justify-content: flex-start; padding: 18px 24px; }
+
+        .btn:hover {
+            box-shadow: var(--shadow), 0 0 25px var(--theme-border-glow);
+            border-color: var(--theme-base); transform: translateY(-3px);
+        }
+        
+        /* Tactile Mobile Squeeze effect */
+        .btn.tapped, .icon-btn.tapped, .video-card.tapped {
+            transform: scale(0.95) translateY(0) !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+            border-color: var(--theme-base);
+        }
+
+        .btn i { font-size: 1.35rem; width: 26px; text-align: center; color: var(--text-main); transition: color 0.4s; }
+        .btn.btn-accent { background: var(--theme-base); color: var(--theme-contrast); border: none; font-weight: 600; }
+        .btn.btn-accent i { color: var(--theme-contrast); }
+        .row-split .btn { width: 100%; padding: 16px 10px; font-size: 0.95rem; }
+
+        .cascade-in { animation: elasticUpFade 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes elasticUpFade { to { opacity: 1; transform: translateY(0); } }
+
+        h3.section-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 24px; text-align: center; letter-spacing: -0.5px; }
+        
+        .video-container { display: flex; flex-direction: column; gap: 24px; }
+        
+        .video-card {
+            display: flex; align-items: center; justify-content: center;
+            position: relative; aspect-ratio: 16 / 9; border-radius: 20px; overflow: hidden;
+            box-shadow: var(--shadow); border: 2px solid var(--glass-border); background: #000;
+            opacity: 0; transform: translateY(20px); text-decoration: none; cursor: pointer;
+            touch-action: manipulation;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .video-card:hover { 
+            transform: translateY(-4px); 
+            border-color: var(--theme-base); 
+            box-shadow: var(--shadow), 0 0 30px var(--theme-border-glow);
+        }
+        
+        .video-thumbnail {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center; transition: transform 0.5s ease;
+        }
+
+        .video-card:hover .video-thumbnail { transform: scale(1.05); }
+
+        .video-overlay {
+            position: absolute; inset: 0; background: rgba(0, 0, 0, 0.3); transition: background 0.3s;
+        }
+        
+        .video-card:hover .video-overlay { background: rgba(0, 0, 0, 0.5); }
+
+        .play-btn-wrapper {
+            position: relative; z-index: 5;
+            color: #FF0000; font-size: 4.5rem; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.8));
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .video-card:hover .play-btn-wrapper { transform: scale(1.15); }
+
+        .video-title {
+            position: absolute; top: 15px; left: 15px; right: 15px; color: #FFFFFF;
+            font-weight: 600; font-size: 1.1rem; text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+            z-index: 2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .toast {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            color: var(--text-main); border: 2px solid var(--glass-border); padding: 14px 28px;
+            border-radius: 30px; font-weight: 500; font-size: 0.95rem; box-shadow: var(--shadow); z-index: 1000;
+            transition: bottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; align-items: center; gap: 10px;
+        }
+        .toast.show { bottom: 50px; }
+    </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="top-controls">
+    <button class="icon-btn action-btn" onclick="shareProfile(this)" title="Share Profile">
+        <i class="fa-solid fa-share-nodes"></i>
+    </button>
+    <button id="theme-toggle" class="icon-btn action-btn" title="Toggle Dark/Light Mode">
+        <i class="fa-solid fa-moon" id="theme-icon"></i>
+    </button>
+</div>
+
+<div id="home-view" class="view active">
+    <div class="avatar-container stagger-item">
+        <div class="avatar-glow"></div>
+        <div class="avatar">
+            <!-- Using the newly requested ImgBB direct link -->
+            <img src="https://i.ibb.co/fgjF1wJ/Copy-of-Modern-Minimal-Name-Initials-Logo-20260607-001641-0001.png" alt="RJ PLAYS" class="avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="avatar-fallback" style="display:none;">RJ</span>
+        </div>
+    </div>
+
+    <div class="header-text stagger-item">
+        <h1>RJ CREATES</h1>
+        <p class="subtitle">Creator • Mobile Gamer • Editor</p>
+    </div>
+
+    <div class="links-wrapper">
+        <div class="row-split">
+            <a href="https://youtube.com/@realrjplays" class="btn ext-link stagger-item">
+                <i class="fa-brands fa-youtube"></i> <span>RJ PLAYS</span>
+            </a>
+            <a href="https://youtube.com/@RJEDITZZZ" class="btn ext-link stagger-item">
+                <i class="fa-brands fa-youtube"></i> <span>RJ EDITZZZ</span>
+            </a>
+        </div>
+        <a href="https://www.instagram.com/realrjplaysyt?igsh=MThzdHppZ3RibXB3aA==" class="btn ext-link stagger-item">
+            <i class="fa-brands fa-instagram"></i> <span>RJ PLAYS</span>
+        </a>
+        <a href="https://discord.gg/jSSKFNknZS" class="btn ext-link stagger-item">
+            <i class="fa-brands fa-discord"></i> <span>RJ's HQ</span>
+        </a>
+        <a href="#" class="btn btn-accent nav-btn stagger-item" data-target="creations-view">
+            <i class="fa-solid fa-layer-group"></i> <span>View Other Creations</span>
+        </a>
+    </div>
+
+    <h3 class="section-title stagger-item">Latest Videos</h3>
+    <div id="video-container" class="video-container">
+        <!-- Facade engine populates this dynamically -->
+    </div>
+</div>
+
+<div id="creations-view" class="view">
+    <div class="header-text stagger-item">
+        <h2 style="font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 8px;">Other Creations</h2>
+        <p class="subtitle">Explore the extended network</p>
+    </div>
+
+    <div class="links-wrapper">
+        <a href="https://youtube.com/@jackcopycatguy?si=bc0UCHZu2ymy0UY-" class="btn btn-left ext-link stagger-item">
+            <i class="fa-brands fa-youtube"></i> <span>Copy Cat Guy</span>
+        </a>
+        <a href="https://youtube.com/@sacredspirituallyrical?si=tXnMU4PTB7t0uAIT" class="btn btn-left ext-link stagger-item">
+            <i class="fa-brands fa-youtube"></i> <span>Spiritual Editor</span>
+        </a>
+        <a href="https://youtube.com/@cclyricaleditor?si=BIGari7OoS6KRKRj" class="btn btn-left ext-link stagger-item">
+            <i class="fa-brands fa-youtube"></i> <span>Lyrical Editor</span>
+        </a>
+        <a href="https://www.instagram.com/sacredspirituallyrical?igsh=MTRvZ2dqZHNjc3UwcQ==" class="btn btn-left ext-link stagger-item">
+            <i class="fa-brands fa-instagram"></i> <span>Spiritual Editor</span>
+        </a>
+        <a href="https://www.instagram.com/realrjeditzzz?igsh=MTJyY3lwaHd6OHJuMA==" class="btn btn-left ext-link stagger-item">
+            <i class="fa-brands fa-instagram"></i> <span>RJ EDITZZZ</span>
+        </a>
+        <a href="https://www.instagram.com/sunzyakki?igsh=MWFsdzJnYTdkaGw1cw==" class="btn btn-left ext-link stagger-item">
+            <i class="fa-brands fa-instagram"></i> <span>Copy Cat Guy</span>
+        </a>
+    </div>
+
+    <div style="text-align: center;" class="stagger-item">
+        <a href="#" class="icon-btn nav-btn" data-target="home-view" style="display: inline-flex; width: auto; padding: 0 26px; border-radius: 30px; gap: 10px; font-weight: 500;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Home
+        </a>
+    </div>
+</div>
+
+<div id="toast" class="toast"><i class="fa-solid fa-circle-check" style="color:var(--text-main);"></i> Link copied!</div>
+
+<script>
+    const root = document.documentElement;
+    const body = document.body;
+    const toggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+
+    if (localStorage.getItem('theme') !== 'light') {
+        body.classList.add('dark-mode');
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    toggleBtn.addEventListener('click', function(e) {
+        hapticFeedback();
+        this.classList.add('tapped');
+        setTimeout(() => this.classList.remove('tapped'), 200);
+        
+        body.classList.toggle('dark-mode');
+        const isDark = body.classList.contains('dark-mode');
+        themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+
+    function hapticFeedback() {
+        if (navigator.vibrate) navigator.vibrate(15);
+    }
+
+    document.querySelectorAll('.ext-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('href');
+            hapticFeedback();
+            this.classList.add('tapped');
+            setTimeout(() => {
+                this.classList.remove('tapped');
+                window.open(url, '_blank');
+            }, 220); // Delay allows mobile users to see the physical button squeeze
+        });
+    });
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = this.getAttribute('data-target');
+            hapticFeedback();
+            this.classList.add('tapped');
+            setTimeout(() => {
+                this.classList.remove('tapped');
+                switchView(target);
+            }, 220);
+        });
+    });
+
+    function shareProfile(btn) {
+        hapticFeedback();
+        btn.classList.add('tapped');
+        setTimeout(() => btn.classList.remove('tapped'), 200);
+        
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = window.location.href;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resizeCanvas() {
+        // Pixel density fix for ultra-sharp rendering on iPhone/Android
+        const dpr = window.devicePixelRatio || 1;
+        width = window.innerWidth;
+        height = window.innerHeight;
+        
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+    }
+    
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class AmbientOrb {
+        constructor() {
+            this.x = Math.random() * width; this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5) * 0.8; this.vy = (Math.random() - 0.5) * 0.8;
+            this.size = Math.min(width, height) * (0.35 + Math.random() * 0.15);
+        }
+        update() {
+            this.x += this.vx; this.y += this.vy;
+            if (this.x < -this.size || this.x > width + this.size) this.vx *= -1;
+            if (this.y < -this.size || this.y > height + this.size) this.vy *= -1;
+        }
+        draw() {
+            const orbColor = getComputedStyle(root).getPropertyValue('--orb-color').trim();
+            ctx.beginPath();
+            const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+            gradient.addColorStop(0, `rgba(${orbColor}, 0.12)`); gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = gradient; ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+    const orbs = [new AmbientOrb(), new AmbientOrb(), new AmbientOrb()];
+    function animateBg() {
+        ctx.clearRect(0, 0, width, height);
+        orbs.forEach(orb => { orb.update(); orb.draw(); });
+        requestAnimationFrame(animateBg);
+    }
+    animateBg();
+
+    function triggerCascade(viewId) {
+        document.querySelectorAll(`#${viewId} .stagger-item`).forEach((item, index) => {
+            item.classList.remove('cascade-in'); void item.offsetWidth; 
+            item.style.animationDelay = `${index * 0.08}s`; item.classList.add('cascade-in');
+        });
+    }
+
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(view => { view.classList.remove('active'); view.style.display = 'none'; });
+        const targetView = document.getElementById(viewId);
+        targetView.style.display = 'block';
+        setTimeout(() => targetView.classList.add('active'), 10);
+        triggerCascade(viewId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderVideoFacades() {
+        const container = document.getElementById('video-container');
+        container.innerHTML = ''; 
+
+        // Hardcoded target videos ensuring zero iframe API errors
+        const targetVideos = [
+            { id: 'psHWVuHtXnk', title: 'Check out my latest video!' },
+            { id: 'wyco8K7brDQ', title: 'Latest Upload!' } 
+        ];
+
+        targetVideos.forEach((videoObj, index) => {
+            const card = document.createElement('a');
+            // Direct native link to launch the YouTube mobile application
+            card.href = `https://www.youtube.com/watch?v=${videoObj.id}`;
+            card.target = '_blank';
+            card.className = 'video-card cascade-in ext-link';
+            card.style.animationDelay = `${(index + 5) * 0.08}s`; 
+
+            // High Resolution Thumbnail Extractor
+            card.innerHTML = `
+                <div class="video-thumbnail" style="background-image: url('https://img.youtube.com/vi/${videoObj.id}/maxresdefault.jpg'), url('https://img.youtube.com/vi/${videoObj.id}/hqdefault.jpg');"></div>
+                <div class="video-overlay"></div>
+                <div class="video-title">${videoObj.title}</div>
+                <div class="play-btn-wrapper">
+                    <i class="fa-brands fa-youtube"></i>
+                </div>
+            `;
+            container.appendChild(card);
+            
+            // Re-attaching the mobile squeeze tactile effect to dynamically created video cards
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                hapticFeedback();
+                this.classList.add('tapped');
+                setTimeout(() => {
+                    this.classList.remove('tapped');
+                    window.open(this.href, '_blank');
+                }, 220);
+            });
+        });
+    }
+
+    window.onload = () => {
+        renderVideoFacades();
+        triggerCascade('home-view');
+    };
+</script>
+</body>
+</html>
